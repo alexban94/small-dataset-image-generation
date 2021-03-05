@@ -1,0 +1,27 @@
+Beginning training script
+../train.py:73: YAMLLoadWarning: calling yaml.load() without Loader=... is deprecated, as the default Loader is unsafe. Please read https://msg.pyyaml.org/load for full details.
+  config = yaml_utils.Config(yaml.load(open(args.config_path)))
+snapshot-> 16143698440
+Traceback (most recent call last):
+  File "../train.py", line 92, in <module>
+    cuda.get_device(device).use()
+  File "/cs/home/psyajhi/.virtualenv/lib64/python3.6/site-packages/chainer/backends/cuda.py", line 346, in get_device
+    return _get_cuda_device(*args)
+  File "/cs/home/psyajhi/.virtualenv/lib64/python3.6/site-packages/chainer/backends/cuda.py", line 353, in _get_cuda_device
+    check_cuda_available()
+  File "/cs/home/psyajhi/.virtualenv/lib64/python3.6/site-packages/chainer/backends/cuda.py", line 142, in check_cuda_available
+    raise RuntimeError(msg)
+RuntimeError: CUDA environment is not correctly set up
+(see https://github.com/chainer/chainer#installation).CuPy is not correctly installed.
+
+If you are using wheel distribution (cupy-cudaXX), make sure that the version of CuPy you installed matches with the version of CUDA on your host.
+Also, confirm that only one CuPy package is installed:
+  $ pip freeze
+
+If you are building CuPy from source, please check your environment, uninstall CuPy and reinstall it with:
+  $ pip install cupy --no-cache-dir -vvvv
+
+Check the Installation Guide for details:
+  https://docs.cupy.dev/en/latest/install.html
+
+original error: libcublas.so.10: cannot open shared object file: No such file or directory
