@@ -16,31 +16,23 @@ from dis_models.patch_discriminator import PatchDiscriminator
 from updater import Updater
 
 # Modified to load the dataset specified via command line.
-def get_dataset(image_size, config, dataset, rotate):
+def get_dataset(image_size, config, dataset):
     # return an array of image shaped (config.datasize, 3, image_size, image_size)
 
     if dataset:
         # please define your dataset here if necessary
         import cv2
-        print("Dataset being used: %s" % dataset)
-        print("Use rotations?: %s" % str(rotate))
 
         img_path = Path(f"{config.data_path}/{dataset}")
         img_path = list(img_path.glob("*"))[:config.datasize]
         img = []
-        for i in range(len(img_path)):  # Normally 100, but try all images.
-            if "_r" in image_path and not rotate:
-                continue
+        for i in range(config.datasize):
             img_ = cv2.imread(str(img_path[i]))[:, :, ::-1]
             h, w = img_.shape[:2]
             size = min(h, w)
             img_ = img_[(h - size) // 2:(h - size) // 2 + size, (w - size) // 2:(w - size) // 2 + size]
             img.append(cv2.resize(img_, (image_size, image_size)))
-        print(img)
-        print(np.shape(img))
-        img = np.array(img)
-        print(img.shape)
-        img = img.transpose(0, 3, 1, 2)#.transpose(0, 3, 1, 2)
+        img = np.array(img).transpose(0, 3, 1, 2)
         img = img.astype("float32") / 127.5 - 1
 
 
@@ -60,8 +52,7 @@ def get_dataset(image_size, config, dataset, rotate):
         img = np.array(img).transpose(0, 3, 1, 2)
         img = img.astype("float32") / 127.5 - 1
 
-    
-    print("Number of images to use: %i" % len(img))
+    print("number of data", len(img))
 
     return img
 
@@ -116,8 +107,8 @@ if __name__ == "__main__":
     layers = ["conv1_1", "conv1_2", "conv2_1", "conv2_2", "conv3_1", "conv3_2", "conv3_3", "conv4_1", "conv4_2",
               "conv4_3"]
 
-    rotate = False
-    img = xp.array(get_dataset(image_size, config, args.dataset, rotate))
+
+    img = xp.array(get_dataset(image_size, config))
 
     if comm is None or comm.rank == 0:
         perm_dataset = np.arange(len(img))

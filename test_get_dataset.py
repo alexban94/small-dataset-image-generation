@@ -89,32 +89,9 @@ if __name__ == "__main__":
     config.image_size = config.image_sizes[config.gan_type]
     image_size = config.image_size
 
-    if config.gan_type == "BIGGAN":
-        try:
-            comm = chainermn.create_communicator(args.communicator)
-        except:
-            comm = None
-    else:
-        comm = None
-
-    device = args.gpu if comm is None else comm.intra_rank
-    cuda.get_device(device).use()
-
-    if args.gpu >= 0:
-        cuda.get_device_from_id(args.gpu)
-        xp = cuda.cupy
-    else:
-        xp = np
+    
 
     np.random.seed(1234)
-
-    if config.perceptual:
-        vgg = VGG().to_gpu()
-    else:
-        vgg = None
-
-    layers = ["conv1_1", "conv1_2", "conv2_1", "conv2_2", "conv3_1", "conv3_2", "conv3_3", "conv4_1", "conv4_2",
-              "conv4_3"]
 
     rotate = False
     img = xp.array(get_dataset(image_size, config, args.dataset, rotate))
@@ -127,62 +104,4 @@ if __name__ == "__main__":
     if comm is not None:
         perm_dataset = chainermn.scatter_dataset(perm_dataset, comm, shuffle=True)
 
-    batchsize = min(img.shape[0], config.batchsize[config.gan_type])
-    perm_iter = chainer.iterators.SerialIterator(perm_dataset, batch_size=batchsize)
-
-    ims = []
-    datasize = len(img)
-
-    target = img
-
-    # Model
-    if config.gan_type == "BIGGAN":
-        gen = AdaBIGGAN(config, datasize, comm=comm)
-    elif config.gan_type == "SNGAN":
-        gen = AdaSNGAN(config, datasize, comm=comm)
-
-    if not config.random:  # load pre-trained generator model
-        chainer.serializers.load_npz(config.snapshot[config.gan_type], gen.gen)
-    gen.to_gpu(device)
-    gen.gen.to_gpu(device)
-
-    if config.l_patch_dis > 0:
-        dis = PatchDiscriminator(comm=comm)
-        dis.to_gpu(device)
-        opt_dis = dis.optimizer
-        opts = {"opt_gen": gen.optimizer, "opt_dis": opt_dis}
-    else:
-        dis = None
-        opt_dis = None
-        opts = {"opt_gen": gen.optimizer}
-
-    models = {"gen": gen, "dis": dis}
-
-    kwargs = {"gen": gen, "dis": dis, "vgg": vgg, "target": target, "layers": layers, "optimizer": opts,
-              "iterator": perm_iter, "device": device, "config": config}
-    updater = Updater(**kwargs)
-
-    trainer = chainer.training.Trainer(updater, (config.iteration, 'iteration'), out=f"{config.save_path}{now}")
-
-    if comm is None or comm.rank == 0:
-        report_keys = ['epoch', 'iteration', 'loss_gen', 'loss_dis']
-        trainer.extend(extensions.snapshot(filename="snapshot" + str(now) + "_{.updater.iteration}.h5"),
-                       trigger=(config.snapshot_interval, 'iteration'))
-
-        trainer.extend(extensions.snapshot_object(gen, "gen" + str(now) + "_{.updater.iteration}.h5"),
-                       trigger=(config.snapshot_interval, "iteration"))
-        trainer.extend(extensions.snapshot_object(gen.gen, "gen_gen" + str(now) + "_{.updater.iteration}.h5"),
-                       trigger=(config.snapshot_interval, "iteration"))
-        if dis is not None:
-            trainer.extend(extensions.snapshot_object(dis, "dis" + str(now) + "_{.updater.iteration}.h5"),
-                           trigger=(config.snapshot_interval, "iteration"))
-
-        trainer.extend(extensions.LogReport(trigger=(config.display_interval, 'iteration')))
-        trainer.extend(extensions.PrintReport(report_keys), trigger=(config.display_interval, 'iteration'))
-        # evaluation
-        trainer.extend(models["gen"].evaluation(f"{config.save_path}{now}"),
-                       trigger=(config.evaluation_interval, 'iteration'))
-
-    if args.resume:
-        chainer.serializers.load_npz(args.resume, trainer)
-    trainer.run()
+    

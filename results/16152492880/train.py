@@ -23,7 +23,7 @@ def get_dataset(image_size, config, dataset, rotate):
         # please define your dataset here if necessary
         import cv2
         print("Dataset being used: %s" % dataset)
-        print("Use rotations?: %s" % str(rotate))
+        print("Use rotations?: %b" % rotate)
 
         img_path = Path(f"{config.data_path}/{dataset}")
         img_path = list(img_path.glob("*"))[:config.datasize]
@@ -36,11 +36,7 @@ def get_dataset(image_size, config, dataset, rotate):
             size = min(h, w)
             img_ = img_[(h - size) // 2:(h - size) // 2 + size, (w - size) // 2:(w - size) // 2 + size]
             img.append(cv2.resize(img_, (image_size, image_size)))
-        print(img)
-        print(np.shape(img))
-        img = np.array(img)
-        print(img.shape)
-        img = img.transpose(0, 3, 1, 2)#.transpose(0, 3, 1, 2)
+        img = np.array(img).transpose(0, 3, 1, 2)
         img = img.astype("float32") / 127.5 - 1
 
 

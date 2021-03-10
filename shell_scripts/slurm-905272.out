@@ -1,0 +1,15 @@
+Beginning training script for foot
+../train.py:82: YAMLLoadWarning: calling yaml.load() without Loader=... is deprecated, as the default Loader is unsafe. Please read https://msg.pyyaml.org/load for full details.
+  config = yaml_utils.Config(yaml.load(open(args.config_path)))
+snapshot-> 16152556480
+Dataset being used: gestational_foot
+Use rotations?: False
+[]
+(0,)
+(0,)
+Traceback (most recent call last):
+  File "../train.py", line 120, in <module>
+    img = xp.array(get_dataset(image_size, config, args.dataset, rotate))
+  File "../train.py", line 43, in get_dataset
+    img = img.transpose(0, 3, 1, 2)#.transpose(0, 3, 1, 2)
+ValueError: axes don't match array
