@@ -21,7 +21,7 @@ initialize: True
 not_initial_gamma: False
 not_initial_beta: False
 random: False
-data_path: "/home/alex/msci_project/data"
+data_path: "/home/alex/msci_project/data"  # swap this when on carey
 dataset: "Anime"  # face, flower, flower_77, FFHQ, Anime, gestational_face/ear/foot
 save_path: "../results/"
 

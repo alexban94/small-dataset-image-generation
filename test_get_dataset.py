@@ -9,6 +9,7 @@ from chainer.links import VGG16Layers as VGG
 from chainer.training import extensions
 import chainermn
 
+import glob2
 import yaml
 import source.yaml_utils as yaml_utils
 from gen_models.ada_generator import AdaBIGGAN, AdaSNGAN
@@ -22,25 +23,29 @@ def get_dataset(image_size, config, dataset, rotate):
     if dataset:
         # please define your dataset here if necessary
         import cv2
-        print("Dataset being used: %s" % dataset)
         print("Use rotations?: %s" % str(rotate))
+        print("Dataset being used: %s" % dataset)
 
-        img_path = Path(f"{config.data_path}/{dataset}")
-        img_path = list(img_path.glob("*"))[:config.datasize]
+
+        img_dir = Path(f"{config.data_path}/{dataset}/**/*.png")
+        print("Data location: ", img_dir)
+
+        # Get all images in the chosen dataset directory.
+        img_path = list(glob2.glob(str(img_dir)))
+
         img = []
         for i in range(len(img_path)):  # Normally 100, but try all images.
-            if "_r" in image_path and not rotate:
+            if "_r" in str(img_path[i]) and not rotate:
                 continue
             img_ = cv2.imread(str(img_path[i]))[:, :, ::-1]
             h, w = img_.shape[:2]
             size = min(h, w)
             img_ = img_[(h - size) // 2:(h - size) // 2 + size, (w - size) // 2:(w - size) // 2 + size]
             img.append(cv2.resize(img_, (image_size, image_size)))
-        print(img)
-        print(np.shape(img))
-        img = np.array(img)
+        # This arranges the array so it has dimensions: N x C x H x W
+        img = np.array(img).transpose(0, 3, 1, 2)
         print(img.shape)
-        img = img.transpose(0, 3, 1, 2)#.transpose(0, 3, 1, 2)
+
         img = img.astype("float32") / 127.5 - 1
 
 
@@ -81,8 +86,8 @@ if __name__ == "__main__":
     now = int(time.time()) * 10 + args.suffix
     config = yaml_utils.Config(yaml.load(open(args.config_path)))
     os.makedirs(f"{config.save_path}{now}", exist_ok=True)
-    shutil.copy(args.config_path, f"{config.save_path}{now}/config{now}.yml")
-    shutil.copy("../train.py", f"{config.save_path}{now}/train.py")
+    #shutil.copy(args.config_path, f"{config.save_path}{now}/config{now}.yml")
+    #shutil.copy("./train.py", f"{config.save_path}{now}/train.py")
     print("snapshot->", now)
 
     # image size
@@ -94,14 +99,7 @@ if __name__ == "__main__":
     np.random.seed(1234)
 
     rotate = False
-    img = xp.array(get_dataset(image_size, config, args.dataset, rotate))
+    img = np.array(get_dataset(image_size, config, args.dataset, rotate))
 
-    if comm is None or comm.rank == 0:
-        perm_dataset = np.arange(len(img))
-    else:
-        perm_dataset = None
-
-    if comm is not None:
-        perm_dataset = chainermn.scatter_dataset(perm_dataset, comm, shuffle=True)
 
     
